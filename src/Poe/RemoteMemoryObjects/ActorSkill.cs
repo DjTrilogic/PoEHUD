@@ -16,14 +16,12 @@ namespace PoeHUD.Poe.RemoteMemoryObjects
         public bool CanBeUsedWithWeapon => M.ReadByte(Address + 0x46) > 0;
         public bool CanBeUsed => M.ReadByte(Address + 0x47) == 0;
         public int Cost => M.ReadByte(Address + 0x48);
-        public int TotalUses => M.ReadInt(Address + 0x4c);
-        public int MaxUses => M.ReadInt(Address + 0x50);
+        //public int Unknown_Old_MaxUses => M.ReadInt(Address + 0x4c);
+        public int TotalUses => M.ReadInt(Address + 0x50);
         public float Cooldown => M.ReadInt(Address + 0x54) / 100f; //Converted milliseconds to seconds
 
-        public int SoulsCap => M.ReadInt(Address + 0x64);
         public int SoulsPerUse => M.ReadInt(Address + 0x68);
         public int TotalVaalUses => M.ReadInt(Address + 0x6c);
-        public int CurrentSouls => M.ReadInt(Address + 0x70);
 
         public string Name
         {
@@ -97,10 +95,10 @@ namespace PoeHUD.Poe.RemoteMemoryObjects
         public bool IsUsing => SkillUseStage > 2; //GetStat(PlayerStats.CastingSpell) > 0;
 
         public TimeSpan CastTime => TimeSpan.FromMilliseconds((double)((int)Math.Ceiling((double)(1000f / (((float)HundredTimesAttacksPerSecond) / 100f)))));
-        public float Dps => GetStat(PlayerStats.HundredTimesDamagePerSecond + (IsUsing ? 4 : 0)) / 100f;
-        public int HundredTimesAttacksPerSecond => GetStat(IsUsing ? PlayerStats.HundredTimesCastsPerSecond : PlayerStats.HundredTimesAttacksPerSecond);
-        public bool IsTotem => GetStat(PlayerStats.IsTotem) == 1 || GetStat(PlayerStats.SkillIsTotemified) == 1;
-        public bool IsTrap => GetStat(PlayerStats.IsTrap) == 1 || GetStat(PlayerStats.SkillIsTrapped) == 1;
+        public float Dps => GetStat(GameStat.HundredTimesDamagePerSecond + (IsUsing ? 4 : 0)) / 100f;
+        public int HundredTimesAttacksPerSecond => GetStat(IsUsing ? GameStat.HundredTimesCastsPerSecond : GameStat.HundredTimesAttacksPerSecond);
+        public bool IsTotem => GetStat(GameStat.IsTotem) == 1 || GetStat(GameStat.SkillIsTotemified) == 1;
+        public bool IsTrap => GetStat(GameStat.IsTrap) == 1 || GetStat(GameStat.SkillIsTrapped) == 1;
         public bool IsVaalSkill => (SoulsPerUse >= 1) && (TotalVaalUses >= 1);
 
         private bool IsMine => true;//TODO
@@ -175,12 +173,12 @@ namespace PoeHUD.Poe.RemoteMemoryObjects
             }
         }
 
-        public Dictionary<PlayerStats, int> Stats
+        public Dictionary<GameStat, int> Stats
         {
             get
             {
                 var statsPtr = M.ReadLong(Address + 0x78);
-                var result = new Dictionary<PlayerStats, int>();
+                var result = new Dictionary<GameStat, int>();
 
                 ReadStats(result, statsPtr);
 
@@ -191,7 +189,7 @@ namespace PoeHUD.Poe.RemoteMemoryObjects
             }
         }
 
-        internal void ReadStats(Dictionary<PlayerStats, int> stats, long address)
+        internal void ReadStats(Dictionary<GameStat, int> stats, long address)
         {
             var statPtrStart = M.ReadLong(address + 0x20);
             var statPtrEnd = M.ReadLong(address + 0x28);
@@ -205,12 +203,12 @@ namespace PoeHUD.Poe.RemoteMemoryObjects
             {
                 key = BitConverter.ToInt32(bytes, i);
                 value = BitConverter.ToInt32(bytes, i + 0x04);
-                stats[(PlayerStats)key] = value;
+                stats[(GameStat)key] = value;
             }
         }
 
 
-        public int GetStat(PlayerStats stat)
+        public int GetStat(GameStat stat)
         {
             int num;
             if (!Stats.TryGetValue(stat, out num))

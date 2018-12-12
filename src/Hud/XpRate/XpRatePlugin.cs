@@ -202,7 +202,15 @@ namespace PoeHUD.Hud.XpRate
             float effectiveArenaLevel = arenaLevel < 71 ? arenaLevel : ArenaEffectiveLevels[arenaLevel];
             double safeZone = Math.Floor(Convert.ToDouble(characterLevel) / 16) + 3;
             double effectiveDifference = Math.Max(Math.Abs(characterLevel - effectiveArenaLevel) - safeZone, 0);
-            double xpMultiplier = Math.Max(Math.Pow((characterLevel + 5) / (characterLevel + 5 + Math.Pow(effectiveDifference, 2.5)), 1.5), 0.01);
+            double xpMultiplier;
+
+            xpMultiplier = Math.Pow((characterLevel + 5) / (characterLevel + 5 + Math.Pow(effectiveDifference, 2.5)), 1.5);
+
+            if (characterLevel >= 95)//For player levels equal to or higher than 95:
+                xpMultiplier *= 1d / (1 + 0.1 * (characterLevel - 94));
+
+            xpMultiplier = Math.Max(xpMultiplier, 0.01);
+
             return xpMultiplier;
         }
 
@@ -222,7 +230,7 @@ namespace PoeHUD.Hud.XpRate
             xpLeftQ = 0;
             //yield return new WaitFunction(() =>{return !GameController.InGameReal;});
             yield return  new WaitFunction(()=> {return GameController.Game.IsGameLoading;});
-            yield return new WaitTime(300);
+            //yield return new WaitTime(300);
             startTime = lastTime = DateTime.Now;
             startXp = GameController.Player.GetComponent<Player>().XP;
             levelXpPenalty = LevelXpPenalty();

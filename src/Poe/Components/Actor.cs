@@ -20,37 +20,14 @@ namespace PoeHUD.Poe.Components
         public bool isMoving => Action == ActionFlags.Moving;
         public bool isAttacking => Action == ActionFlags.UsingAbility;
 
-        [Obsolete("Use DeployedObjects instead")]
-        public List<int> Minions
-        {
-            get
-            {
-                var list = new List<int>();
-                if (Address == 0)
-                {
-                    return list;
-                }
-                long num = M.ReadLong(Address + 0x310);
-                long num2 = M.ReadLong(Address + 0x318);
-                for (long i = num; i < num2; i += 8)
-                {
-                    // using int instead of long because first 4 bytes are id
-                    // second 4 bytes are wierd number which depend on socket number/location.
-                    int item = M.ReadInt(i);
-                    list.Add(item);
-                }
-                return list;
-            }
-        }
-
         public bool HasMinion(Entity entity)
         {
             if (Address == 0)
             {
                 return false;
             }
-            long num = M.ReadLong(Address + 0x308);
-            long num2 = M.ReadLong(Address + 0x310);
+            long num = M.ReadLong(Address + 0x328);
+            long num2 = M.ReadLong(Address + 0x330);
             for (long i = num; i < num2; i += 8)
             {
                 int num3 = M.ReadInt(i);
@@ -63,20 +40,21 @@ namespace PoeHUD.Poe.Components
         }
 
 
-        public float TimeSinseLastMove => M.ReadFloat(Address + 0x110);
-        public float TimeSinseLastAction => M.ReadFloat(Address + 0x114);
+        public float TimeSinseLastMove => -M.ReadFloat(Address + 0x110);
+        public float TimeSinseLastAction => -M.ReadFloat(Address + 0x114);
 
         public ActionWrapper CurrentAction => Action == ActionFlags.UsingAbility ? ReadObject<ActionWrapper>(Address + 0x60) : null;
 
+        // e.g minions, mines
+        private long DeployedObjectStart => M.ReadLong(Address + 0x328);
+        private long DeployedObjectEnd => M.ReadLong(Address + 0x330);
+        public long DeployedObjectsCount => (DeployedObjectEnd - DeployedObjectStart) / 8;
         public List<DeployedObject> DeployedObjects
         {
             get
             {
                 var result = new List<DeployedObject>();
-                var start = M.ReadLong(Address + 0x310);
-                var end = M.ReadLong(Address + 0x318);
-
-                for (var addr = start; addr < end; addr += 8)
+                for (var addr = DeployedObjectStart; addr < DeployedObjectEnd; addr += 8)
                 {
                     var objectId = M.ReadUInt(addr);
                     var objectKey = M.ReadUShort(addr + 4);//in list of entities
@@ -94,20 +72,42 @@ namespace PoeHUD.Poe.Components
                 var skillsEndPointer = M.ReadLong(Address + 0x2c8);
                 skillsStartPointer += 8;//Don't ask me why. Just skipping first one
 
+                int stuckCounter = 0;
                 var result = new List<ActorSkill>();
                 for (var addr = skillsStartPointer; addr < skillsEndPointer; addr += 16)//16 because we are reading each second pointer (pointer vectors)
                 {
                     result.Add(ReadObject<ActorSkill>(addr));
+                    if (stuckCounter++ > 50)
+                        return new List<ActorSkill>();
                 }
                 return result;
             }
         }
 
+		public List<ActorVaalSkill> ActorVaalSkills
+		{
+			get
+			{
+				const int ACTOR_VAAL_SKILLS_SIZE = 0x20;
+				var skillsStartPointer = M.ReadLong(Address + 0x2F0);
+				var skillsEndPointer = M.ReadLong(Address + 0x2F8);
 
-        public class ActionWrapper : RemoteMemoryObject
+				int stuckCounter = 0;
+				var result = new List<ActorVaalSkill>();
+				for (var addr = skillsStartPointer; addr < skillsEndPointer; addr += ACTOR_VAAL_SKILLS_SIZE)
+				{
+					result.Add(ReadObject<ActorVaalSkill>(addr));
+					if (stuckCounter++ > 50)
+						return new List<ActorVaalSkill>();
+				}
+				return result;
+			}
+		}
+
+		public class ActionWrapper : RemoteMemoryObject
         {
-            public float DestinationX => M.ReadFloat(Address + 0x84);
-            public float DestinationY => M.ReadFloat(Address + 0x88);
+            public float DestinationX => M.ReadInt(Address + 0x40);
+            public float DestinationY => M.ReadInt(Address + 0x44);
 
             public Vector2 CastDestination => new Vector2(DestinationX, DestinationY);
 
