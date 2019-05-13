@@ -9,7 +9,7 @@ namespace PoeHUD.Poe.RemoteMemoryObjects
 {
 	public class ServerData : RemoteMemoryObject
 	{
-		public BetrayalData BetrayalData => GetObject<BetrayalData>(M.ReadLong(Address + 0x1FC8));
+		public BetrayalData BetrayalData => GetObject<BetrayalData>(M.ReadLong(Address + 0x3C8, 0x718));
 
 		[Obsolete("Obsolete. Use GameController.Game.IngameState.IngameUi.StashElement instead")]
 	    public StashElement StashPanel => GameController.Instance.Game.IngameState.IngameUi.StashElement;// Address != 0 ? GetObject<StashElement>(M.ReadLong(Address + 0x4C8, 0xA0, 0x78)) : null; // needs fixed, but if it's obsolete, just remove it
@@ -17,6 +17,11 @@ namespace PoeHUD.Poe.RemoteMemoryObjects
 		public PartyStatus PartyStatusType => (PartyStatus)M.ReadByte(Address + 0x6288);
 
 		public CharacterClass PlayerClass => (CharacterClass)(M.ReadByte(Address + 0x6090) & 0xF);
+
+        public int GetBeastCapturedAmount(BestiaryCapturableMonster monster)
+        {
+            return M.ReadInt(Address + 0x5120 + monster.Id * 4);
+        }
 
 		public List<ushort> PassiveSkillIds
 		{
