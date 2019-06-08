@@ -11,9 +11,9 @@ namespace PoeHUD.Poe
 {
     public sealed class Entity : RemoteMemoryObject, IEntity
     {
-        private long ComponentLookup => M.ReadLong(Address, 0x48, 0x30);
+        private long ComponentLookup => M.ReadLong(Address, 0x40, 0x30);
         private long ComponentList => M.ReadLong(Address + 0x8);
-        public string Path => M.ReadStringU(M.ReadLong(Address, 0x20));
+        public string Path => M.ReadStringU(M.ReadLong(Address, 0x18));
 
         public string Metadata
         {
@@ -41,7 +41,7 @@ namespace PoeHUD.Poe
         /// <summary>
         /// 0x65004D = "Me"(4 bytes) from word Metadata
         /// </summary>
-        public bool IsValid => Address != 0 && M.ReadInt(Address, 0x20, 0) == 0x65004D;
+        public bool IsValid => Address != 0 && M.ReadInt(Address, 0x18, 0) == 0x65004D;
 
         public uint Id => M.ReadUInt(Address + 0x40);// << 32 ^ Address;
         public int InventoryId => M.ReadInt(Address + 0x58);
