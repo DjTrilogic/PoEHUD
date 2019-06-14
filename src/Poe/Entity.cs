@@ -13,7 +13,8 @@ namespace PoeHUD.Poe
     {
         private long ComponentLookup => M.ReadLong(Address, 0x40, 0x30);
         private long ComponentList => M.ReadLong(Address + 0x8);
-        public string Path => M.ReadStringU(M.ReadLong(Address, 0x18));
+        private string _path;
+        public string Path => _path ?? (_path = M.ReadStringU(M.ReadLong(Address, 0x18)));
 
         public string Metadata
         {
@@ -55,7 +56,7 @@ namespace PoeHUD.Poe
         public bool IsTargetable => GetComponent<Targetable>().isTargetable;
         public bool CannotDieAura => HasBuff("monster_aura_cannot_die");
         public bool BestiaryMonsterCaptured => HasBuff("capture_monster_trapped");
-        public bool IsHidden => HasStat(GameStat.IsHiddenMonster, out var stat) && stat == 1;
+        public bool IsHidden => HasStat((GameStat)GameController.Instance.Files.Stats.records["is_hidden_monster"].ID, out var stat) && stat == 1;
         public bool CannotBeDamagedStat => HasStat(GameStat.CannotBeDamaged, out var stat) && stat == 1;
         public bool Invincible => CannotDieAura || CannotBeDamagedStat;
         public bool IsMapBoss => GetComponent<ObjectMagicProperties>().Mods.Any(a => a == "MonsterMapBoss");
